@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"reflect"
 	"sort"
 	"time"
 
@@ -106,6 +107,9 @@ type issuerAndSerial struct {
 	IssuerName   asn1.RawValue
 	SerialNumber *big.Int
 }
+
+// Never obfuscate the Message type.
+var _ = reflect.TypeOf(issuerAndSerial{})
 
 type IssuerAndSerial struct {
 	IssuerName   asn1.RawValue
@@ -909,7 +913,7 @@ func encryptDESCBC(content []byte) ([]byte, *encryptedContentInfo, error) {
 // value is EncryptionAlgorithmDESCBC. To use a different algorithm, change the
 // value before calling Encrypt(). For example:
 //
-//     ContentEncryptionAlgorithm = EncryptionAlgorithmAES128GCM
+//	ContentEncryptionAlgorithm = EncryptionAlgorithmAES128GCM
 //
 // TODO(fullsailor): Add support for encrypting content with other algorithms
 func Encrypt(content []byte, recipients []*x509.Certificate) ([]byte, error) {
