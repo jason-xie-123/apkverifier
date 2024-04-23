@@ -146,6 +146,7 @@ type SignerInfo struct {
 
 // Never obfuscate the following type.
 var _ = reflect.TypeOf(IssuerAndSerial{})
+var _ = reflect.TypeOf(issuerAndSerial{})
 var _ = reflect.TypeOf(recipientInfo{})
 var _ = reflect.TypeOf(SignerInfo{})
 var _ = reflect.TypeOf(signerInfo{})
