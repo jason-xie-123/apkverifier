@@ -108,9 +108,6 @@ type issuerAndSerial struct {
 	SerialNumber *big.Int
 }
 
-// Never obfuscate the Message type.
-var _ = reflect.TypeOf(issuerAndSerial{})
-
 type IssuerAndSerial struct {
 	IssuerName   asn1.RawValue
 	SerialNumber *big.Int
@@ -146,6 +143,12 @@ type SignerInfo struct {
 	EncryptedDigest           []byte
 	UnauthenticatedAttributes []SignerAttribute `asn1:"optional,tag:1"`
 }
+
+// Never obfuscate the following type.
+var _ = reflect.TypeOf(IssuerAndSerial{})
+var _ = reflect.TypeOf(recipientInfo{})
+var _ = reflect.TypeOf(SignerInfo{})
+var _ = reflect.TypeOf(signerInfo{})
 
 // Parse decodes a DER encoded PKCS7 package
 func Parse(data []byte) (p7 *PKCS7, err error) {
