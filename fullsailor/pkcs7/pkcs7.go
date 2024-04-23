@@ -16,7 +16,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"reflect"
 	"sort"
 	"time"
 
@@ -143,13 +142,6 @@ type SignerInfo struct {
 	EncryptedDigest           []byte
 	UnauthenticatedAttributes []SignerAttribute `asn1:"optional,tag:1"`
 }
-
-// Never obfuscate the following type.
-var _ = reflect.TypeOf(IssuerAndSerial{})
-var _ = reflect.TypeOf(issuerAndSerialInside{})
-var _ = reflect.TypeOf(recipientInfo{})
-var _ = reflect.TypeOf(SignerInfo{})
-var _ = reflect.TypeOf(signerInfoInside{})
 
 // Parse decodes a DER encoded PKCS7 package
 func Parse(data []byte) (p7 *PKCS7, err error) {
