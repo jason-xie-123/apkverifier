@@ -32,7 +32,7 @@ type PKCS7 struct {
 	Content      []byte
 	Certificates []*x509.Certificate
 	CRLs         []pkix.CertificateList
-	Signers      []signerInfo
+	Signers      []signerInfoInside
 	ContentType  asn1.ObjectIdentifier
 	raw          interface{}
 }
@@ -67,7 +67,7 @@ type signedData struct {
 	ContentInfo                contentInfo
 	Certificates               rawCertificates        `asn1:"optional,tag:0"`
 	CRLs                       []pkix.CertificateList `asn1:"optional,tag:1"`
-	SignerInfos                []signerInfo           `asn1:"set"`
+	SignerInfos                []signerInfoInside     `asn1:"set"`
 }
 
 type rawCertificates struct {
@@ -82,7 +82,7 @@ type envelopedData struct {
 
 type recipientInfo struct {
 	Version                int
-	IssuerAndSerialNumber  issuerAndSerial
+	IssuerAndSerialNumber  issuerAndSerialInside
 	KeyEncryptionAlgorithm pkix.AlgorithmIdentifier
 	EncryptedKey           []byte
 }
@@ -103,7 +103,7 @@ type SignerAttribute struct {
 	Value asn1.RawValue `asn1:"set"`
 }
 
-type issuerAndSerial struct {
+type issuerAndSerialInside struct {
 	IssuerName   asn1.RawValue
 	SerialNumber *big.Int
 }
@@ -124,9 +124,9 @@ func (err *MessageDigestMismatchError) Error() string {
 	return fmt.Sprintf("pkcs7: Message digest mismatch\n\tExpected: %X\n\tActual  : %X", err.ExpectedDigest, err.ActualDigest)
 }
 
-type signerInfo struct {
+type signerInfoInside struct {
 	Version                   int `asn1:"default:1"`
-	IssuerAndSerialNumber     issuerAndSerial
+	IssuerAndSerialNumber     issuerAndSerialInside
 	DigestAlgorithm           pkix.AlgorithmIdentifier
 	AuthenticatedAttributes   []attribute `asn1:"optional,tag:0"`
 	DigestEncryptionAlgorithm pkix.AlgorithmIdentifier
@@ -146,10 +146,10 @@ type SignerInfo struct {
 
 // Never obfuscate the following type.
 var _ = reflect.TypeOf(IssuerAndSerial{})
-var _ = reflect.TypeOf(issuerAndSerial{})
+var _ = reflect.TypeOf(issuerAndSerialInside{})
 var _ = reflect.TypeOf(recipientInfo{})
 var _ = reflect.TypeOf(SignerInfo{})
-var _ = reflect.TypeOf(signerInfo{})
+var _ = reflect.TypeOf(signerInfoInside{})
 
 // Parse decodes a DER encoded PKCS7 package
 func Parse(data []byte) (p7 *PKCS7, err error) {
@@ -254,7 +254,7 @@ func (p7 *PKCS7) Verify() (err error) {
 	return nil
 }
 
-func verifySignature(p7 *PKCS7, signer signerInfo) error {
+func verifySignature(p7 *PKCS7, signer signerInfoInside) error {
 	signedData := p7.Content
 	hash, err := getHashForOID(signer.DigestAlgorithm.Algorithm)
 	if err != nil {
@@ -322,7 +322,7 @@ var (
 	oidEncryptionAlgorithmRSA = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
 )
 
-func getCertFromCertsByIssuerAndSerial(certs []*x509.Certificate, ias issuerAndSerial) *x509.Certificate {
+func getCertFromCertsByIssuerAndSerial(certs []*x509.Certificate, ias issuerAndSerialInside) *x509.Certificate {
 	for _, cert := range certs {
 		if isCertMatchForIssuerAndSerial(cert, ias) {
 			return cert
@@ -495,7 +495,7 @@ func selectRecipientForCertificate(recipients []recipientInfo, cert *x509.Certif
 	return recipientInfo{}
 }
 
-func isCertMatchForIssuerAndSerial(cert *x509.Certificate, ias issuerAndSerial) bool {
+func isCertMatchForIssuerAndSerial(cert *x509.Certificate, ias issuerAndSerialInside) bool {
 	return cert.SerialNumber.Cmp(ias.SerialNumber) == 0 && bytes.Compare(cert.RawIssuer, ias.IssuerName.FullBytes) == 0
 }
 
@@ -686,7 +686,7 @@ func (sd *SignedData) AddSigner(cert *x509.Certificate, pkey crypto.PrivateKey, 
 		return err
 	}
 
-	signer := signerInfo{
+	signer := signerInfoInside{
 		AuthenticatedAttributes:   finalAttrs,
 		DigestAlgorithm:           pkix.AlgorithmIdentifier{Algorithm: oidDigestAlgorithmSHA1},
 		DigestEncryptionAlgorithm: pkix.AlgorithmIdentifier{Algorithm: oidSignatureSHA1WithRSA},
@@ -725,8 +725,8 @@ func (sd *SignedData) Finish() ([]byte, error) {
 	return asn1.Marshal(outer)
 }
 
-func cert2issuerAndSerial(cert *x509.Certificate) (issuerAndSerial, error) {
-	var ias issuerAndSerial
+func cert2issuerAndSerial(cert *x509.Certificate) (issuerAndSerialInside, error) {
+	var ias issuerAndSerialInside
 	// The issuer RDNSequence has to match exactly the sequence in the certificate
 	// We cannot use cert.Issuer.ToRDNSequence() here since it mangles the sequence
 	ias.IssuerName = asn1.RawValue{FullBytes: cert.RawIssuer}
